@@ -7,7 +7,7 @@ namespace Catalog.Service.Controllers;
 [Route("items")]
 public class ItemController : ControllerBase
 {
-    private static readonly List<ItemDto> items = new()
+    private static readonly List<ItemDto> Items = new()
     {
         new ItemDto(Guid.NewGuid(), "Potion", "Restores a small amount of HP", 5, DateTimeOffset.UtcNow),
         new ItemDto(Guid.NewGuid(), "Antidote", "Cures poison", 7, DateTimeOffset.UtcNow),
@@ -17,13 +17,18 @@ public class ItemController : ControllerBase
     [HttpGet]
     public IEnumerable<ItemDto> Get()
     {
-        return items;
+        return Items;
     }
     
     [HttpGet("{id}")]
-    public ItemDto? GetById(Guid id)
+    public ActionResult<ItemDto> GetById(Guid id)
     {
-        var item = items.SingleOrDefault(x => x.Id == id);
+        var item = Items.SingleOrDefault(x => x.Id == id);
+
+        if (item == null)
+        {
+            return NotFound();
+        }
         
         return item;
     }
@@ -33,7 +38,7 @@ public class ItemController : ControllerBase
     {
         var item = new ItemDto(Guid.NewGuid(), createItemDto.Name, createItemDto.Description, createItemDto.Price, DateTimeOffset.UtcNow);
         
-        items.Add(item);
+        Items.Add(item);
         
         return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
     }
@@ -41,8 +46,13 @@ public class ItemController : ControllerBase
     [HttpPut("{id}")]
     public IActionResult Put(Guid id, UpdateItemDto updateItemDto)
     {
-        var existingItem = items.SingleOrDefault(x => x.Id == id);
+        var existingItem = Items.SingleOrDefault(x => x.Id == id);
 
+        if (existingItem == null)
+        {
+            return NotFound();
+        }
+        
         var updatedItem = existingItem with
         {
             Name = updateItemDto.Name,
@@ -50,8 +60,9 @@ public class ItemController : ControllerBase
             Price = updateItemDto.Price,
         };
         
-        var index = items.FindIndex(existingItem => existingItem.Id == id);
-        items[index] = updatedItem;
+        var index = Items.FindIndex(x => x.Id == id);
+        
+        Items[index] = updatedItem;
         
         return NoContent();
     }
@@ -59,9 +70,14 @@ public class ItemController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult Delete(Guid id)
     {
-        var index = items.FindIndex(existingItem => existingItem.Id == id);
+        var index = Items.FindIndex(x => x.Id == id);
 
-        items.RemoveAt(index);
+        if (index < 0)
+        {
+            return NotFound();
+        }
+
+        Items.RemoveAt(index);
         
         return NoContent();
     }
