@@ -9,7 +9,12 @@ namespace Catalog.Service.Controllers;
 [Route("items")]
 public class ItemController : ControllerBase
 {
-    private readonly ItemsRepository _itemsRepository = new();
+    private readonly IItemsRepository _itemsRepository;
+
+    public ItemController(IItemsRepository itemsRepository)
+    {
+        _itemsRepository = itemsRepository;
+    }
     
     [HttpGet]
     public async Task<IEnumerable<ItemDto>> GetAsync()
