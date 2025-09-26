@@ -1,3 +1,4 @@
+using Catalog.Service.Entities;
 using Catalog.Service.Repositories;
 using Catalog.Service.Settings;
 using MongoDB.Bson;
@@ -28,7 +29,11 @@ builder.Services.AddSingleton(serviceProvider =>
     return mongoClient.GetDatabase(serviceSettings.ServiceName);
 });
 
-builder.Services.AddSingleton<IItemsRepository, ItemsRepository>();
+builder.Services.AddSingleton<IRepository<Item>>(serviceProvider =>
+{
+    var database = serviceProvider.GetService<IMongoDatabase>();
+    return new MongoRepository<Item>(database, "items");
+});
 
 var app = builder.Build();
 
