@@ -1,6 +1,8 @@
 using Catalog.Service.Dtos;
 using Catalog.Service.Entities;
 using Common;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Service.Controllers;
@@ -10,10 +12,13 @@ namespace Catalog.Service.Controllers;
 public class ItemController : ControllerBase
 {
     private readonly IRepository<Item> _itemsRepository;
+    
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public ItemController(IRepository<Item> itemsRepository)
+    public ItemController(IRepository<Item> itemsRepository, IPublishEndpoint publishEndpoint)
     {
         _itemsRepository = itemsRepository;
+        _publishEndpoint = publishEndpoint;
     }
     
     [HttpGet]
@@ -47,6 +52,8 @@ public class ItemController : ControllerBase
         };
         
         await _itemsRepository.CreateAsync(item);
+
+        await _publishEndpoint.Publish(new CatalogItemCreated(item.Id, item.Name, item.Description));
         
         return CreatedAtAction(nameof(GetByIdAsync), new { id = item.Id }, item);
     }
@@ -67,6 +74,8 @@ public class ItemController : ControllerBase
         
         await _itemsRepository.UpdateAsync(existingItem);
         
+        await _publishEndpoint.Publish(new CatalogItemUpdated(existingItem.Id, existingItem.Name, existingItem.Description));
+        
         return NoContent();
     }
 
@@ -81,6 +90,8 @@ public class ItemController : ControllerBase
         }
 
         await _itemsRepository.RemoveAsync(existingItem.Id);
+        
+        await _publishEndpoint.Publish(new CatalogItemDeleted(existingItem.Id));
         
         return NoContent();
     }
